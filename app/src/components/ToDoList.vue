@@ -5,31 +5,13 @@
 
         <transition-group name="fade" enter-active-class="animated fadeInUp" leave-active-class="animated fadeOutDown">
 
-            <div v-for="(todo, index) in todoListFiltered" :key="todo.id" class="todo-item">
-
-                <div class="todo-item-left">
-                    <input type="checkbox" v-model="todo.completed">
-
-                    <div v-if="!todo.editing" 
-                        class="todo-item-label"
-                        :class="{ completed : todo.completed }" 
-                        @dblclick="editTodo(todo)">{{ todo.title }}</div>
-                        
-                    <input v-else 
-                        class="todo-item-edit" 
-                        type="text" 
-                        v-model="todo.title" 
-                        @blur="doneEdit(todo)" 
-                        @keyup.enter="doneEdit(todo)" 
-                        @keyup.escape="cancelEdit(todo)"
-                        v-focus>
-                </div>
-                
-                <div class="remove-item" @click="removeTodo(index)">
-                    x
-                </div>
-                
-            </div>
+            <to-do-item v-for="(todo, index) in todoListFiltered" 
+                        :key="todo.id"
+                        :todo="todo"
+                        :index="index"
+                        :checkAll="!uncompletedTodos.length" 
+                        @removedTodo="removeTodo"
+                        @finishedEdit="finishedEdit"/>
 
         </transition-group>    
 
@@ -60,8 +42,15 @@
 </template>
 
 <script>
+import ToDoItem from './ToDoItem';
+
 export default {
     name: 'ToDoList',
+
+    components: {
+        ToDoItem
+    },
+
     data() {
         return {
             newToDo: '',
@@ -83,14 +72,6 @@ export default {
                 },
             ]
         }
-    },
-
-    directives: {
-        focus: {
-            inserted: function(el) {
-                el.focus();
-            }
-        } 
     },
 
     computed: {
@@ -139,25 +120,7 @@ export default {
 
         removeTodo(index) {
             this.todoList.splice(index, 1);
-        },
-
-        editTodo(todo) {
-            this.beforeEditCache = todo.title;
-            todo.editing = true;
-        },
-
-        doneEdit(todo) {
-            if (todo.title.trim().length == 0) {
-                todo.title = this.beforeEditCache;
-            }
-
-            todo.editing = false;
-        },
-
-        cancelEdit(todo) {
-            todo.title = this.beforeEditCache;
-            todo.editing = false;    
-        },
+        },        
 
         checkAllTodos() {
             this.todoList.forEach(todo => todo.completed = event.target.checked)
@@ -165,6 +128,10 @@ export default {
 
         clearCompleted() {
             this.todoList = this.todoList.filter(todo => !todo.completed);
+        },
+
+        finishedEdit(data) {
+            this.todoList.splice(data.index, 1, data.todo)
         }
     }
 }
